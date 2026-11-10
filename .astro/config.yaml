@@ -1,2 +1,4 @@
 project:
     name: currency-etl
+webserver:
+    port: "8080"
