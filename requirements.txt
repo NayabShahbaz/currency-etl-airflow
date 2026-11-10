@@ -1,0 +1,3 @@
+# Astro Runtime already ships Airflow + common providers.
+pymongo==4.10.1
+requests>=2.31

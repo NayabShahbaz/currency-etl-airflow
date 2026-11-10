@@ -1,0 +1,51 @@
+# Extra services added on top of the Airflow containers that `astro dev start` creates.
+# Astro puts all its own containers on a bridge network called "airflow"; joining it
+# lets Airflow tasks reach MongoDB by its service name: mongodb://...@mongo:27017
+#
+# Astro does not build images listed here, so build the two custom images first:
+#   docker build -t currency-etl/mongo:1.0.0 docker/mongo
+#   docker build -t currency-etl/mongo-express:1.0.0 docker/mongo-express
+
+services:
+  mongo:
+    image: currency-etl/mongo:1.0.0
+    container_name: currency-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: currency_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db            # persistent storage: data survives container restarts
+    networks:
+      - airflow
+    labels:
+      project: "currency-etl"
+      component: "database"
+
+  mongo-express:
+    image: currency-etl/mongo-express:1.0.0
+    container_name: currency-mongo-express
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: admin123
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongo:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    ports:
+      - "8081:8081"
+    networks:
+      - airflow
+    labels:
+      project: "currency-etl"
+      component: "db-admin-ui"
+
+volumes:
+  mongo_data:
+    name: currency_etl_mongo_data
